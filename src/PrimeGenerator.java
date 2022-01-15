@@ -2,25 +2,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class PrimeGenerator implements Runnable {
 
     // I need a shared Object which with synchrounously assign the next prime number
     // to an available thread
-    protected int current_prime = 0;
-    protected BitSet sieve; // By default all bits are set to 0
+    protected Integer current_prime = 0;
+    private final Object lock = new Object();
+    protected AtomicBitSet sieve; // By default all bits are set to 0
     // ! Therefore, Non-Primes are True
     protected int SIZE;
     // We can speed up insertions making this a list but keeping it a set will allow
     // me to cut some corners
-    protected TreeSet<Integer> Primes = new TreeSet<>();
+    protected ConcurrentSkipListSet<Integer> Primes = new ConcurrentSkipListSet<>();
     protected Integer numThreadCompleted = 0;
 
-    public BitSet getSieve() {
+    public AtomicBitSet getSieve() {
         return sieve;
     }
 
-    public void setSieve(BitSet sieve) {
+    public void setSieve(AtomicBitSet sieve) {
         this.sieve = sieve;
     }
 
@@ -43,12 +45,12 @@ public class PrimeGenerator implements Runnable {
         this.sieve = generateStartingPrimeBitSet(nBits);
     }
 
-    public TreeSet<Integer> getPrimesSet() {
+    public ConcurrentSkipListSet<Integer> getPrimesSet() {
         return this.Primes;
     }
 
-    private BitSet generateStartingPrimeBitSet(int size) {
-        BitSet ret = new BitSet(size);
+    private AtomicBitSet generateStartingPrimeBitSet(int size) {
+        AtomicBitSet ret = new AtomicBitSet(size + 1);
         TreeSet<Integer> primeSet = new TreeSet<>(Arrays.asList(2, 3, 5, 7, 11, 13, 17, 19));
 
         // Manually Set the bitset to contain the first 8 primes so taht all threads can
@@ -56,7 +58,7 @@ public class PrimeGenerator implements Runnable {
         for (int i = 0; i < 20; i++) {
 
             if (!primeSet.contains(i)) {
-                System.out.println("Setting " + i);
+                // System.out.println("Setting " + i);
                 ret.set(i);
             }
 
@@ -69,24 +71,29 @@ public class PrimeGenerator implements Runnable {
 
     // TODO Implement method
     private synchronized int getNextPrime() {
-        int ret = current_prime + 1;
-        // While the Bitset is true we are reading primes
-        while (this.sieve.get(ret)) {
-            // Increment
-            ret += 1;
-            // Check if we are going out of bound of the sieve
 
-            if (Math.floor(Math.sqrt(this.SIZE)) <= ret) {
-                // System.out.println(ret + " too large. Sending -1");
-                return -1;
+        synchronized (lock) {
+
+            int ret = current_prime + 1;
+            // While the Bitset is true we are reading primes
+            while (this.sieve.get(ret)) {
+                // Increment
+                ret += 1;
+                // Check if we are going out of bound of the sieve
+
+                if (Math.floor(Math.sqrt(this.SIZE)) <= ret) {
+                    // System.out.println(ret + " too large. Sending -1");
+                    return -1;
+                }
             }
+            // the new prime has been found
+            this.current_prime = ret;
+            this.Primes.add(this.current_prime);
+            // System.out.println("Assigning " + Thread.currentThread().getName() + ": " +
+            // this.current_prime);
+            return ret;
         }
-        // the new prime has been found
-        this.current_prime = ret;
-        this.Primes.add(this.current_prime);
-        // System.out.println("Assigning " + Thread.currentThread().getName() + ": " +
-        // this.current_prime);
-        return ret;
+
     }
 
     @Override
@@ -101,7 +108,7 @@ public class PrimeGenerator implements Runnable {
                 // On to Validation Step ...");
                 int threshold = SIZE / 8;
                 int start = threshold * threadNum;
-
+                System.out.println("Done: " + threadNum);
                 return;
             }
             // Sieve it

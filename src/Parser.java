@@ -2,7 +2,7 @@ import java.util.BitSet;
 
 public class Parser implements Runnable {
 
-    private BitSet sieve;
+    private AtomicBitSet sieve;
     protected PrimeGenerator pg;
 
     public Parser(PrimeGenerator pg) {
