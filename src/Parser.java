@@ -13,7 +13,7 @@ public class Parser implements Runnable {
     @Override
     public void run() {
         int threadNum = Integer.parseInt(Thread.currentThread().getName());
-        int threshold = this.pg.SIZE / 8;
+        int threshold = this.pg.SIZE / App.getNUM_THREADS();
         validateSelection(threshold * threadNum, threshold * (threadNum + 1));
 
     }
@@ -21,7 +21,7 @@ public class Parser implements Runnable {
     // Checks the sieve range for primes inclusively
     private void validateSelection(int start, int end) {
 
-        System.out.println("Start: " + start + " End: " + end);
+        // System.out.println("Start: " + start + " End: " + end);
         for (int i = start; i <= end; i++) {
             // Primes are stored as false values
             if (!this.sieve.get(i)) {

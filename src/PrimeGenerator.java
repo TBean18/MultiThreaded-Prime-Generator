@@ -108,7 +108,7 @@ public class PrimeGenerator implements Runnable {
                 // On to Validation Step ...");
                 int threshold = SIZE / 8;
                 int start = threshold * threadNum;
-                System.out.println("Done: " + threadNum);
+                // System.out.println("Done: " + threadNum);
                 return;
             }
             // Sieve it
