@@ -1,8 +1,6 @@
-import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class App {
@@ -11,34 +9,15 @@ public class App {
 
     public static void main(String[] args) throws Exception {
         // Start Timer
-        PrimeGenerator primeGen = new PrimeGenerator();
         long startTime = System.currentTimeMillis();
 
-        // Spawn NUM_THREADS Threads
-        Thread[] threads = new Thread[NUM_THREADS];
-        for (int i = 0; i < NUM_THREADS; i++) {
-            String name = "Thread #" + i;
-            threads[i] = new Thread(primeGen, "" + i);
-            threads[i].start();
-        }
-        for (int i = 0; i < NUM_THREADS; i++) {
-            threads[i].join();
-
-        }
-
-        // System.out.println("Starting Parse Phase");
+        // Sieve the Primes
+        PrimeGenerator primeGen = new PrimeGenerator();
+        startAndWaitForThreads(primeGen);
 
         // Parse the primes remaining on the sieve
         Parser parser = new Parser(primeGen);
-        for (int i = 0; i < NUM_THREADS; i++) {
-            threads[i] = new Thread(parser, "" + i);
-            threads[i].start();
-            // threads[i].join();
-        }
-        for (int i = 0; i < NUM_THREADS; i++) {
-            threads[i].join();
-
-        }
+        startAndWaitForThreads(parser);
 
         // Stop Timer Once the Prime Set has been compiled
         long endTime = System.currentTimeMillis();
@@ -47,14 +26,26 @@ public class App {
         ConcurrentSkipListSet<Integer> pSet = primeGen.getPrimesSet();
         printOutputToFile(pSet, duration);
 
-        // System.out.println("Sum total of all primes: " + sum);
-        // System.out.println("Size of Primes Set: " + pSet.size());
-        // System.out.println("Duration: " + duration);
-        // printTopNPrimes(pSet, 10);
-
     }
 
-    public static void printTopNPrimes(ConcurrentSkipListSet pSet, int N) {
+    public static void startAndWaitForThreads(Runnable r) {
+        // Spawn NUM_THREADS Threads
+        Thread[] threads = new Thread[NUM_THREADS];
+        for (int i = 0; i < NUM_THREADS; i++) {
+            threads[i] = new Thread(r, "" + i);
+            threads[i].start();
+        }
+        for (int i = 0; i < NUM_THREADS; i++) {
+            try {
+                threads[i].join();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
+    public static void printTopNPrimes(ConcurrentSkipListSet<Integer> pSet, int N) {
         int ret[] = new int[N];
         Iterator<Integer> iter = pSet.descendingIterator();
         for (int i = 0; i < N; i++) {
@@ -66,7 +57,7 @@ public class App {
 
     }
 
-    public static void printOutputToFile(ConcurrentSkipListSet pSet, long execTime) {
+    public static void printOutputToFile(ConcurrentSkipListSet<Integer> pSet, long execTime) {
         /*
          * <execution time> <total number of primes found> <sum of all primes found>
          * 
