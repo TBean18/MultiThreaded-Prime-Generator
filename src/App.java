@@ -94,4 +94,12 @@ public class App {
             e.printStackTrace();
         }
     }
+
+    public static int getNUM_THREADS() {
+        return NUM_THREADS;
+    }
+
+    public static void setNUM_THREADS(int nUM_THREADS) {
+        NUM_THREADS = nUM_THREADS;
+    }
 }
