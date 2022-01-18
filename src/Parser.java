@@ -21,7 +21,7 @@ public class Parser implements Runnable {
     // Checks the sieve range for primes inclusively
     private void validateSelection(int start, int end) {
 
-        System.out.println("Start: " + start + " End: " + end);
+        // System.out.println("Start: " + start + " End: " + end);
         for (int i = start; i <= end; i++) {
             // Primes are stored as false values
             if (!this.sieve.get(i)) {

@@ -1,35 +1,41 @@
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 public class App {
+    // Global Configuration Variables
+    private static int NUM_THREADS = 8;
+
     public static void main(String[] args) throws Exception {
         // Start Timer
         PrimeGenerator primeGen = new PrimeGenerator();
         long startTime = System.currentTimeMillis();
 
-        // Spawn 8 Threads
-        Thread[] threads = new Thread[8];
-        for (int i = 0; i < 8; i++) {
+        // Spawn NUM_THREADS Threads
+        Thread[] threads = new Thread[NUM_THREADS];
+        for (int i = 0; i < NUM_THREADS; i++) {
             String name = "Thread #" + i;
             threads[i] = new Thread(primeGen, "" + i);
             threads[i].start();
         }
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < NUM_THREADS; i++) {
             threads[i].join();
 
         }
 
-        System.out.println("Starting Parse Phase");
+        // System.out.println("Starting Parse Phase");
 
         // Parse the primes remaining on the sieve
         Parser parser = new Parser(primeGen);
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < NUM_THREADS; i++) {
             threads[i] = new Thread(parser, "" + i);
             threads[i].start();
             // threads[i].join();
         }
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < NUM_THREADS; i++) {
             threads[i].join();
 
         }
@@ -39,15 +45,12 @@ public class App {
         long duration = endTime - startTime;
         // Display the result
         ConcurrentSkipListSet<Integer> pSet = primeGen.getPrimesSet();
-        long sum = 0;
-        for (Integer i : pSet) {
-            sum += i;
-        }
+        printOutputToFile(pSet, duration);
 
-        System.out.println("Sum total of all primes: " + sum);
-        System.out.println("Size of Primes Set: " + pSet.size());
-        System.out.println("Duration: " + duration);
-        printTopNPrimes(pSet, 10);
+        // System.out.println("Sum total of all primes: " + sum);
+        // System.out.println("Size of Primes Set: " + pSet.size());
+        // System.out.println("Duration: " + duration);
+        // printTopNPrimes(pSet, 10);
 
     }
 
@@ -61,5 +64,34 @@ public class App {
             System.out.println(ret[N - i - 1]);
         }
 
+    }
+
+    public static void printOutputToFile(ConcurrentSkipListSet pSet, long execTime) {
+        /*
+         * <execution time> <total number of primes found> <sum of all primes found>
+         * 
+         * <top ten maximum primes, listed in order from lowest to highest>
+         */
+        int primeSetSize = pSet.size();
+        int[] lastTenPrimes = new int[10];
+        Iterator<Integer> iter = pSet.descendingIterator();
+        long sum = 0;
+        for (int i = 0; i < primeSetSize; i++) {
+            int val = iter.next();
+            sum += val;
+            if (i < 10) {
+                lastTenPrimes[9 - i] = val;
+            }
+        }
+
+        try {
+            PrintWriter pWriter = new PrintWriter("primes.txt");
+            pWriter.printf("%dms %d %d%n", execTime, primeSetSize, sum);
+            pWriter.print(Arrays.toString(lastTenPrimes));
+            pWriter.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
