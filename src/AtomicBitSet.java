@@ -4,7 +4,7 @@ public class AtomicBitSet {
     private final AtomicIntegerArray arr;
 
     public AtomicBitSet(int size) {
-        int intLength = (size + 31) >>> 5;
+        int intLength = (size + 31) >>> 5; // >>> is unsigned right shift
         arr = new AtomicIntegerArray(intLength);
     }
 
